@@ -7,12 +7,6 @@
 
 The tools support PNG, JPEG, and GIF images.
 
-| Image                  |                               Palette  |
-|------------------------|----------------------------------------|
-| ![img1](docs/img1.jpg) | ![img1-palette](docs/img1-palette.png) |
-| ![img2](docs/img2.jpg) | ![img2-palette](docs/img2-palette.png) |
-| ![img3](docs/img3.jpg) | ![img3-palette](docs/img3-palette.png) |
-
 <!-- TOC -->
 
 - [Get it](#get-it)
@@ -24,6 +18,13 @@ The tools support PNG, JPEG, and GIF images.
 - [Comments](#comments)
 
 <!-- /TOC -->
+
+| Image                  |                               Palette  |
+|------------------------|----------------------------------------|
+| ![img1](docs/img1.jpg) | ![img1-palette](docs/img1-palette.png) |
+| ![img2](docs/img2.jpg) | ![img2-palette](docs/img2-palette.png) |
+| ![img3](docs/img3.jpg) | ![img3-palette](docs/img3-palette.png) |
+
 
 ## Get it
 
