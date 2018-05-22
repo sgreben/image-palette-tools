@@ -19,7 +19,7 @@ The tools support PNG, JPEG, and GIF images.
 
 <!-- /TOC -->
 
-| Image                  |                               Palette  |
+| Image                  |                         Palette (k=8)  |
 |------------------------|----------------------------------------|
 | ![img1](docs/img1.jpg) | ![img1-palette](docs/img1-palette.png) |
 | ![img2](docs/img2.jpg) | ![img2-palette](docs/img2-palette.png) |
