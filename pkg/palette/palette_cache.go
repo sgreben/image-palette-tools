@@ -35,9 +35,10 @@ func (c *PaletteCache) Get(p []color.RGBA) []float64 {
 	}
 	point := make([]float64, 3*len(p))
 	for i, c := range p {
-		point[0+3*i] = float64(c.R) / float64(0xff)
-		point[1+3*i] = float64(c.G) / float64(0xff)
-		point[2+3*i] = float64(c.B) / float64(0xff)
+		h, s, l := hsl(c.R, c.G, c.B)
+		point[0+3*i] = h * weightH // float64(c.R) / float64(0xff)
+		point[1+3*i] = s * weightS // float64(c.G) / float64(0xff)
+		point[2+3*i] = l * weightL // float64(c.B) / float64(0xff)
 	}
 	c.Palettes[key] = point
 	return point

@@ -33,6 +33,18 @@ func LessHLS(centroid []color.RGBA, i, j int) bool {
 	return hi < hj
 }
 
+func LessLHS(centroid []color.RGBA, i, j int) bool {
+	hi, si, li := hsl(centroid[i].R, centroid[i].G, centroid[i].B)
+	hj, sj, lj := hsl(centroid[j].R, centroid[j].G, centroid[j].B)
+	if li == lj {
+		if hi == hj {
+			return si < sj
+		}
+		return hi < hj
+	}
+	return li < lj
+}
+
 func imagePoints(cache *ColorCache, i image.Image) (out [][]float64) {
 	size := i.Bounds().Size()
 	out = make([][]float64, size.X*size.Y)
@@ -71,43 +83,6 @@ func Render(palette []color.RGBA, size int) image.Image {
 	return i
 }
 
-func hsl(rb, gb, bb uint8) (h, s, l float64) {
-	r := float64(rb) / 255.0
-	g := float64(gb) / 255.0
-	b := float64(bb) / 255.0
-
-	max := math.Max(math.Max(r, g), b)
-	min := math.Min(math.Min(r, g), b)
-	l = (max + min) / 2
-	delta := max - min
-	if delta != 0 {
-		if l < 0.5 {
-			s = delta / (max + min)
-		} else {
-			s = delta / (2 - max - min)
-		}
-		r2 := (((max - r) / 6) + (delta / 2)) / delta
-		g2 := (((max - g) / 6) + (delta / 2)) / delta
-		b2 := (((max - b) / 6) + (delta / 2)) / delta
-		switch {
-		case r == max:
-			h = b2 - g2
-		case g == max:
-			h = (1.0 / 3.0) + r2 - b2
-		case b == max:
-			h = (2.0 / 3.0) + g2 - r2
-		}
-	}
-
-	switch {
-	case h < 0:
-		h += 1
-	case h > 1:
-		h -= 1
-	}
-	return
-}
-
 // Cluster clusters palettes
 func Cluster(cache *PaletteCache, k int, ps [][]color.RGBA) ([]int, [][]color.RGBA, error) {
 	if len(ps) == 0 {
@@ -140,9 +115,10 @@ func Cluster(cache *PaletteCache, k int, ps [][]color.RGBA) ([]int, [][]color.RG
 		count := float64(centroidPointCount[j])
 		centroid[j] = make([]color.RGBA, n)
 		for i := 0; i < n; i++ {
-			r := uint32(point[0+3*i] / count * 255.0)
-			g := uint32(point[1+3*i] / count * 255.0)
-			b := uint32(point[2+3*i] / count * 255.0)
+			h := point[0+3*i] / count / weightH
+			s := point[1+3*i] / count / weightS
+			l := point[2+3*i] / count / weightL
+			r, g, b := rgb(h, s, l)
 			centroid[j][i] = color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
 		}
 	}
@@ -177,7 +153,7 @@ func Extract(cache *ColorCache, k int, i image.Image) ([]color.RGBA, error) {
 		centroid[j] = color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
 	}
 
-	sort.Slice(centroid, func(i int, j int) bool { return LessHLS(centroid, i, j) })
+	sort.Slice(centroid, func(i int, j int) bool { return LessLHS(centroid, i, j) })
 
 	return centroid, nil
 }

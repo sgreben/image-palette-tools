@@ -19,7 +19,7 @@ The tools support PNG, JPEG, and GIF images.
 
 <!-- /TOC -->
 
-| Image                  |                         Palette (k=8)  |
+| Image                  |                         Palette (k=5)  |
 |------------------------|----------------------------------------|
 | ![img1](docs/img1.jpg) | ![img1-palette](docs/img1-palette.png) |
 | ![img2](docs/img2.jpg) | ![img2-palette](docs/img2-palette.png) |
@@ -35,7 +35,7 @@ go get -u github.com/sgreben/image-palette-tools/cmd/extract-palette
 go get -u github.com/sgreben/image-palette-tools/cmd/cluster-by-palette
 ```
 
-Or [download the binaries](https://github.com/sgreben/image-palette-tools/releases/latest) from the releases page. 
+Or [download the binaries](https://github.com/sgreben/image-palette-tools/releases/latest) from the releases page.
 
 ```sh
 # Linux
@@ -117,14 +117,14 @@ Usage of cluster-by-palette:
 
 > Create 8 clusters of images based on their 4-color palettes. Make directories `cluster-0`...`cluster-7` and copy the files to their respective cluster's directory. For each cluster, create PNG palette images named `cluster-8-0.png`...`cluster-8-7.png`.
 
-```sh 
+```sh
 cluster-by-palette \
       -n 8 \
       -k 4 \
       -out-shell 'd="cluster-{{.Label}}"; mkdir -p "$d"; cp "{{.Path}}" "$d"' \
       -out-cluster-png "cluster-{{.N}}-{{.Label}}.png" \
       *.jpg
-``` 
+```
 
 ## Comments
 

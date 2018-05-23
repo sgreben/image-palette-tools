@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"sync"
 	"text/template"
 
@@ -37,7 +38,8 @@ type pathPalette struct {
 var (
 	kImage         int
 	kPalette       int
-	outPng         = flagvar.Template{Root: templateSettings}
+	outPngCluster  = flagvar.Template{Root: templateSettings}
+	outPngSingle   = flagvar.Template{Root: templateSettings}
 	inJSON         = flagvar.Template{Root: templateSettings}
 	outClusterJSON = flagvar.Template{Root: templateSettings}
 	outJSON        = flagvar.Template{Root: templateSettings}
@@ -45,6 +47,7 @@ var (
 	globSelect     flagvarGlob.Glob
 	outColorSize   int
 	maxParallel    int
+	colorSortOrder = palette.LessLHS
 
 	templateSettings = template.New("").Funcs(map[string]interface{}{
 		"abs":      func(s string) (string, error) { return filepath.Abs(s) },
@@ -70,7 +73,8 @@ func init() {
 	flag.Var(&globSelect, "glob", "glob expression matching image files to cluster")
 	flag.Var(&inJSON, "in-json", "path to read palette JSON from (go template)")
 	flag.Var(&outJSON, "out-json", "path to write palette JSON to (go template)")
-	flag.Var(&outPng, "out-cluster-png", "path of output palette image (PNG) (go template)")
+	flag.Var(&outPngSingle, "out-png", "path of output palette image (PNG) (go template)")
+	flag.Var(&outPngCluster, "out-cluster-png", "path of output cluster palette image (PNG) (go template)")
 	flag.IntVar(&outColorSize, "out-cluster-png-height", 100, "size of each color square in the palette output image")
 	flag.Var(&outClusterJSON, "out-summary-json", "path of output JSON containing the clustering (go template)")
 	flag.Var(&outShell, "out-shell", "shell command to run for each image (go template)")
@@ -82,6 +86,26 @@ func init() {
 	if outJSON.Value == nil && outJSON.Text != "" {
 		outJSON.Set(defaultOutJSON)
 	}
+}
+
+func writeOutPngSingle(sourcePath string, label int, p []color.RGBA) {
+	b := bytes.NewBuffer(nil)
+	outPngSingle.Value.Execute(b, map[string]interface{}{
+		"Path":    sourcePath,
+		"N":       kImage,
+		"K":       kPalette,
+		"Label":   label,
+		"I":       label,
+		"Palette": p,
+	})
+	targetPath := b.String()
+	fOut, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR, 0600)
+	log.Println("writing", targetPath)
+	if err != nil {
+		log.Println(err)
+	}
+	defer fOut.Close()
+	png.Encode(fOut, palette.Render(p, outColorSize))
 }
 
 func writeOutJSON(sourcePath string, pp pathPalette) {
@@ -179,7 +203,7 @@ func runOutShell(path string, label int, p []color.RGBA) {
 
 func writeOutPng(label int, p []color.RGBA) {
 	b := bytes.NewBuffer(nil)
-	outPng.Value.Execute(b, map[string]interface{}{
+	outPngCluster.Value.Execute(b, map[string]interface{}{
 		"N":       kImage,
 		"K":       kPalette,
 		"Label":   label,
@@ -286,25 +310,29 @@ func main() {
 		defer clusterWg.Done()
 		for pathPalette := range cluster {
 			paths = append(paths, pathPalette.Path)
+			sort.Slice(pathPalette.Palette, func(i int, j int) bool {
+				return colorSortOrder(pathPalette.Palette, i, j)
+			})
 			palettes = append(palettes, pathPalette.Palette)
 		}
 		labels, centroids, err := palette.Cluster(paletteCache, kImage, palettes)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if outPng.Value != nil {
+		if outPngCluster.Value != nil {
 			for i, p := range centroids {
 				writeOutPng(i, p)
-			}
-		}
-		if outShell.Value != nil {
-			for i, l := range labels {
-				runOutShell(paths[i], l, palettes[i])
 			}
 		}
 		m := make(map[string]int, len(labels))
 		for i, l := range labels {
 			m[paths[i]] = l
+			writeOutPngSingle(paths[i], l, palettes[i])
+		}
+		if outShell.Value != nil {
+			for i, l := range labels {
+				runOutShell(paths[i], l, palettes[i])
+			}
 		}
 		obj := map[string]interface{}{
 			"centroids": htmlss(centroids),

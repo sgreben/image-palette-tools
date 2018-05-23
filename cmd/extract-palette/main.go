@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"sync"
 	"text/template"
 
@@ -23,12 +24,13 @@ import (
 )
 
 var (
-	k            int
-	outPng       = flagvar.Template{Root: templateSettings}
-	outTxt       = flagvar.Template{Root: templateSettings}
-	outJSON      = flagvar.Template{Root: templateSettings}
-	outColorSize int
-	maxParallel  int
+	k              int
+	outPng         = flagvar.Template{Root: templateSettings}
+	outTxt         = flagvar.Template{Root: templateSettings}
+	outJSON        = flagvar.Template{Root: templateSettings}
+	outColorSize   int
+	maxParallel    int
+	colorSortOrder = palette.LessLHS
 
 	templateSettings = template.New("").Funcs(map[string]interface{}{
 		"abs":      func(s string) (string, error) { return filepath.Abs(s) },
@@ -168,6 +170,9 @@ func main() {
 			defer workWg.Done()
 			for path := range work {
 				p, err := extractPalette(path)
+				sort.Slice(p, func(i int, j int) bool {
+					return colorSortOrder(p, i, j)
+				})
 				if err != nil {
 					log.Println(path, "error:", err)
 					continue
