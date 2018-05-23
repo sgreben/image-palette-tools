@@ -31,9 +31,10 @@ func (c *ColorCache) Get(r, g, b uint32) []float64 {
 		return point
 	}
 	point := make([]float64, 3)
-	point[0] = float64(r) / float64(0xffff)
-	point[1] = float64(g) / float64(0xffff)
-	point[2] = float64(b) / float64(0xffff)
+	h, s, l := hsl(uint8(float64(r)/256.0), uint8(float64(g)/256.0), uint8(float64(b)/256.0))
+	point[0] = h // float64(r) / float64(0xffff)
+	point[1] = s // float64(g) / float64(0xffff)
+	point[2] = l // float64(b) / float64(0xffff)
 	c.Colors[key] = point
 	return point
 }

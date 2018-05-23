@@ -9,42 +9,6 @@ import (
 	"github.com/bugra/kmeans"
 )
 
-func LessLSH(centroid []color.RGBA, i, j int) bool {
-	hi, si, li := hsl(centroid[i].R, centroid[i].G, centroid[i].B)
-	hj, sj, lj := hsl(centroid[j].R, centroid[j].G, centroid[j].B)
-	if li == lj {
-		if si == sj {
-			return hi < hj
-		}
-		return si < sj
-	}
-	return li < lj
-}
-
-func LessHLS(centroid []color.RGBA, i, j int) bool {
-	hi, si, li := hsl(centroid[i].R, centroid[i].G, centroid[i].B)
-	hj, sj, lj := hsl(centroid[j].R, centroid[j].G, centroid[j].B)
-	if hi == hj {
-		if li == lj {
-			return si < sj
-		}
-		return li < lj
-	}
-	return hi < hj
-}
-
-func LessLHS(centroid []color.RGBA, i, j int) bool {
-	hi, si, li := hsl(centroid[i].R, centroid[i].G, centroid[i].B)
-	hj, sj, lj := hsl(centroid[j].R, centroid[j].G, centroid[j].B)
-	if li == lj {
-		if hi == hj {
-			return si < sj
-		}
-		return hi < hj
-	}
-	return li < lj
-}
-
 func imagePoints(cache *ColorCache, i image.Image) (out [][]float64) {
 	size := i.Bounds().Size()
 	out = make([][]float64, size.X*size.Y)
@@ -147,9 +111,13 @@ func Extract(cache *ColorCache, k int, i image.Image) ([]color.RGBA, error) {
 	centroid := make([]color.RGBA, k)
 	for j, point := range centroidPoints {
 		n := float64(centroidPointCount[j])
-		r := uint32(point[0] / n * 255.0)
-		g := uint32(point[1] / n * 255.0)
-		b := uint32(point[2] / n * 255.0)
+		h := point[0] / n
+		s := point[1] / n
+		l := point[2] / n
+		r, g, b := rgb(h, s, l)
+		// r := uint32(point[0] / n * 255.0)
+		// g := uint32(point[1] / n * 255.0)
+		// b := uint32(point[2] / n * 255.0)
 		centroid[j] = color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
 	}
 
